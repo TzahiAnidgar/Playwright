@@ -1,5 +1,7 @@
 import { test, Request, expect, Page, chromium, BrowserContext } from '@playwright/test';
 import { HomePage } from '../logic/pages/homePage';
+import { CartApi } from '../logic/api/cart-api';
+import { setAddItemRequest } from '../logic/api/request/add-item-request';
 
 
 const BASE_URL = 'https://www.rami-levy.co.il';
@@ -41,32 +43,22 @@ test.describe('State Stock Table Validation Suite', () => {
     });
 
     test('Adding one pack of cocacola via api -> Validate request and cart price', async ({ request }) => {
-
-        const colaId = "386565";
-        const quantity = 1;
-        const response = await request.post(`${BASE_URL}/api/v2/cart`, {
-            data: {
-                "isClub": 0,
-                "items": { "386565": quantity },
-                "meta": null,
-                "store": 331,
-                "supplyAt": `${new Date().toISOString()}`
-            }
-        });
+        //A
+        const addItemData = setAddItemRequest(1)
+        const cartApi = new CartApi(); 
+        const response = await cartApi.addItemToCart(addItemData)
         const bodyRes = await response.json();
-
+        //A
         await page.reload();
-
         const homePage = new HomePage(page);
         const cartPriceBrowser = await homePage.getCartPrice();
-
+        //A
         console.log("Cart Price: " + cartPriceBrowser);
         expect.soft(response.ok()).toBeTruthy();
         expect.soft(response.status()).toBe(200);
         expect.soft(bodyRes.items[1].id).toBe(parseInt(colaId));
         expect.soft(bodyRes.items[1].quantity).toBe(quantity);
         expect.soft(bodyRes.price).toBe(cartPriceBrowser);
-
     });
 
     test('Adding one pack of cocacola via api -> Adding another pack by UI -> Validate request and cart price', async ({ request }) => {
